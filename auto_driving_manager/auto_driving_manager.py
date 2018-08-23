@@ -157,3 +157,4 @@ class AutoDrivingManager(IAutoDriving):
         self.auto_driver.stop()
         print('delete AutoDrivingManager')
 
+

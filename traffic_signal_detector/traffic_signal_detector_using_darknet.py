@@ -159,8 +159,8 @@ def nparray_to_image(img):
     return image
 
 
-DEFAULT_CFG_PATH = os.path.join(os.path.dirname(__file__), "resources", "yolov3-tiny-myobj.cfg")
-DEFAULT_WEIGHTS__PATH = os.path.join(os.path.dirname(__file__), "resources", "yolov3-tiny-myobj.weights")
+DEFAULT_CFG_PATH = os.path.join(os.path.dirname(__file__), "resources", "yolov3-tiny.cfg")
+DEFAULT_WEIGHTS__PATH = os.path.join(os.path.dirname(__file__), "resources", "yolov3-tiny.weights")
 DEFAULT_META_DATA_PATH = os.path.join(os.path.dirname(__file__), "resources", "obj.data")
 
 QUEUE_SIZE = 5
@@ -239,8 +239,17 @@ class TrafficSignalDetectorUsingDarknet(object):
             y1 = int(y-height/2)
             x2 = int(x+width/2)
             y2 = int(y+height/2)
+            
+            #add
+            distance_square = pow(x2 - (width/2), 2) + pow(y2 - height, 2)
+            distance = round(pow(distance_square, 0.5), 2)
+            
             cv2.putText(frame, label+'(%.2f)'%acc, (x1-5, y1-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255))
+            
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
+            
+            #add
+            cv2.putText(frame, str(distance), (x2-x1+5, y2-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255))
         return frame
 
     def avg_processing_time(self, frame_height, frame_width):
