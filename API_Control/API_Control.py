@@ -6,6 +6,11 @@ import cv2
 import threading
 import time
 
+sys.path.insert(0, os.path.abspath('..'))
+
+from traffic_signal_detector.ACC import AdaptiveCruseControl
+
+
 def sample(probs):
     s = sum(probs)
     probs = [a/s for a in probs]
@@ -50,6 +55,13 @@ def nparray_to_image(img):
         image = ndarray_image(data, img.ctypes.shape, img.ctypes.strides)
 
         return image
+        
+def Distance_Calculate(x1, y1, x2, y2):
+        
+        distance_square = pow(x2 - x1, 2) + pow(y2 - y1, 2)
+        distance = round(pow(distance_square, 0.5), 2)
+        
+        return distance
 
 DEFAULT_DARKNET_LIB_PATH = os.path.join(os.path.dirname(__file__), "resources", "libdarknet.so")
 
@@ -134,10 +146,23 @@ DEFAULT_META_DATA_PATH = os.path.join(os.path.dirname(__file__), "resources", "o
 QUEUE_SIZE = 5
 THRESHHOLD = 1
 
-class ObjectDistanceCalculateUsingDarknet(object):
+def Decide_LCAS(Distance):
+        
+        if Distance < 80.00:
+            print("LCAS")
+
+class APIControl(object):
+
+
+    def Cal_Distance(self, x1, x2, y1, y2):
+        
+        Distance_Square = pow((x2-x1), 2) + pow((y2-y1), 2)
+        Distance = pow(Distance_Square, 0.5)
+        
+        return round(Distance)
 
     def __init__(self):
-        super(ObjectDistanceCalculateUsingDarknet, self).__init__()
+        super(APIControl, self).__init__()
         print('init TrafficSignalDetectorUsingDarknet')
         self.net = load_net(DEFAULT_CFG_PATH, DEFAULT_WEIGHTS__PATH, 0) 
         self.meta = load_meta(DEFAULT_META_DATA_PATH)
@@ -174,9 +199,11 @@ class ObjectDistanceCalculateUsingDarknet(object):
         
     
     
-    def visualize_object_info(self, frame):
+    def API_Control(self, frame, ACC, AEB, LCAS):
         detected_objs = self.detect(frame)
         num_objs = len(detected_objs)
+        
+        
 
         for i in range(num_objs):
             label, acc, (x, y, width, height) = detected_objs[i]
@@ -184,23 +211,40 @@ class ObjectDistanceCalculateUsingDarknet(object):
             y1 = int(y-height/2)
             x2 = int(x+width/2)
             y2 = int(y+height/2)
+                      
+            Distance = self.Cal_Distance(x, y2, 160, 160)
             
-            #add
-            distance_square = pow(x2 - (width/2), 2) + pow(y2 - height, 2)
-            distance = round(pow(distance_square, 0.5), 2)
+            ACC.Set_Distance(Distance)
+            
+            ACC_Speed = ACC.Get_ACC_Speed
+            
+            if ACC_Speed > 0:
+                ACC.ACC_Control(LCAS)
+                
+            elif ACC_Speed == 0:
+                AEB.AEB_Control()
+                
+            else:
+                print("ERROR")
+            
+            instance = AdaptiveCruseControl(distance)
+            instance.AdaptiveCruseControl.Decide_LCAS()
+           
             
             cv2.putText(frame, label+'(%.2f)'%acc, (x1-5, y1-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255))
             
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 2)
             
             #add
-            cv2.putText(frame, str(distance), (x2-x1+5, y2-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255))
+            #cv2.putText(frame, str(distance), (x2-5, y2-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255))
+            
+            #cv2.putText(frame, str(x), (x2-5, y2-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255))
+            
+         
         return frame
         
     
     
-    
-   # def Distance_Calculate(frame):
     
     
     #def Distance_Rsult_Return():

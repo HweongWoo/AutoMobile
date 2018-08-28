@@ -48,6 +48,26 @@ class AutoDriver(threading.Thread):
         traffic_signal_detector = TrafficSignalDetectorUsingDarknet()
 
         front_camera = LI_IMX377_MIPI_M12()
+        
+        # Craete API
+        API = APIControl()
+        ACC = AdaptiveCruseControl()
+        AEB = AutonomousEmergencyBraking()
+        LCAS = LineChangeAssistSystem()
+        
+        #Set ACC Speed
+        while(1):
+            ACC_Speed = input("Set ACC Speed")
+            if ACC_Speed >= 100:
+                print("Please Set ACC Speed under 100")
+                
+            elif ACC_Speed < 0:
+                print("Please Set ACC Speed over 0")
+                
+            else:
+                ACC.Set_ACC_Speed(ACC_Speed)
+                break
+            
 
         frame = front_camera.capture_frame()
         height = np.size(frame, 0)
@@ -72,6 +92,8 @@ class AutoDriver(threading.Thread):
                 if can_go:
                     car.steer_wheel(steering_angle)
                     car.move_front(MIN_FRONT_PWM+adjusted_speed) # or  car.move_front(car_speed)
+                    API.API_Control(frame, ACC, AEB, LCAS)
+                    
                 else:
                     car.move_front(MID_PWM)
 
@@ -156,5 +178,9 @@ class AutoDrivingManager(IAutoDriving):
     def __del__(self):
         self.auto_driver.stop()
         print('delete AutoDrivingManager')
-
+        
+        
+if __name__ == "__main__":
+    
+    AutoDriver.run()
 
